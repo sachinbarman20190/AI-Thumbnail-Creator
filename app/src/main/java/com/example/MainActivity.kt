@@ -17,6 +17,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.ui.theme.MyApplicationTheme
@@ -60,6 +65,7 @@ class MainActivity : ComponentActivity() {
                                 fileChooserResultLauncher.launch(intent)
                                 true
                             } catch (e: Exception) {
+                                callback.onReceiveValue(null)
                                 filePathCallback = null
                                 false
                             }
@@ -77,61 +83,69 @@ fun WebViewScreen(
     onShowFileChooser: (ValueCallback<Array<Uri>>, WebChromeClient.FileChooserParams) -> Boolean,
     modifier: Modifier = Modifier
 ) {
-    AndroidView(
-        factory = { context ->
-            WebView(context).apply {
-                // Adjust layout to fill parent perfectly
-                layoutParams = android.view.ViewGroup.LayoutParams(
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                )
-                
-                // Configure WebView settings
-                settings.apply {
-                    javaScriptEnabled = true
-                    domStorageEnabled = true
-                    databaseEnabled = true
-                    allowFileAccess = true
-                    allowContentAccess = true
-                    mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                    useWideViewPort = true
-                    loadWithOverviewMode = true
-                    supportZoom()
-                }
+    var webViewKey by remember { mutableStateOf(0) }
 
-                // Attach custom clients
-                webViewClient = object : WebViewClient() {
-                    override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                        // Keep navigation internal rather than launching system browser
-                        return false
+    key(webViewKey) {
+        AndroidView(
+            factory = { context ->
+                WebView(context).apply {
+                    // Adjust layout to fill parent perfectly
+                    layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    
+                    // Configure WebView settings
+                    settings.apply {
+                        javaScriptEnabled = true
+                        domStorageEnabled = true
+                        databaseEnabled = true
+                        allowFileAccess = true
+                        allowContentAccess = true
+                        mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                        useWideViewPort = true
+                        loadWithOverviewMode = true
+                        supportZoom()
                     }
 
-                    override fun onRenderProcessGone(
-                        view: WebView?,
-                        detail: android.webkit.RenderProcessGoneDetail?
-                    ): Boolean {
-                        // Reload or recover gracefully instead of crashing the entire JVM process
-                        view?.loadUrl("file:///android_asset/index.html")
-                        return true // Return true to confirm we handled the crash ourselves
-                    }
-                }
-
-                webChromeClient = object : WebChromeClient() {
-                    override fun onShowFileChooser(
-                        webView: WebView?,
-                        filePathCallback: ValueCallback<Array<Uri>>?,
-                        fileChooserParams: FileChooserParams?
-                    ): Boolean {
-                        if (filePathCallback != null && fileChooserParams != null) {
-                            return onShowFileChooser(filePathCallback, fileChooserParams)
+                    // Attach custom clients
+                    webViewClient = object : WebViewClient() {
+                        override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                            // Keep navigation internal rather than launching system browser
+                            return false
                         }
-                        return super.onShowFileChooser(webView, filePathCallback, fileChooserParams)
-                    }
-                }
 
-                loadUrl(url)
-            }
-        },
-        modifier = modifier.fillMaxSize()
-    )
+                        override fun onRenderProcessGone(
+                            view: WebView?,
+                            detail: android.webkit.RenderProcessGoneDetail?
+                        ): Boolean {
+                            // Complete renewal of the WebView instance by changing the key
+                            try {
+                                webViewKey++
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                            return true // Return true to confirm we handled the crash ourselves
+                        }
+                    }
+
+                    webChromeClient = object : WebChromeClient() {
+                        override fun onShowFileChooser(
+                            webView: WebView?,
+                            filePathCallback: ValueCallback<Array<Uri>>?,
+                            fileChooserParams: FileChooserParams?
+                        ): Boolean {
+                            if (filePathCallback != null && fileChooserParams != null) {
+                                return onShowFileChooser(filePathCallback, fileChooserParams)
+                            }
+                            return super.onShowFileChooser(webView, filePathCallback, fileChooserParams)
+                        }
+                    }
+
+                    loadUrl(url)
+                }
+            },
+            modifier = modifier.fillMaxSize()
+        )
+    }
 }
