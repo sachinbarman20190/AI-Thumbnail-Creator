@@ -243,8 +243,8 @@
             <div class="relative glass-panel rounded-[32px] transition-all duration-300 glow-active group">
                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/50 group-focus-within:text-[#00f4fe] transition-colors">smart_toy</span>
                 <select class="w-full bg-transparent border-0 rounded-[32px] py-4 pl-12 pr-10 text-white font-body-md text-body-md focus:outline-none focus:ring-0 appearance-none cursor-pointer" id="ai-model">
-                    <option class="bg-[#1c1b1b] text-white" selected="" value="gemini-1.5-pro">Gemini 1.5 Pro (Max Quality)</option>
-                    <option class="bg-[#1c1b1b] text-white" value="gemini-1.5-flash">Gemini 1.5 Flash (Ultra Fast)</option>
+                    <option class="bg-[#1c1b1b] text-white" selected="" value="gemini-1.5-pro-latest">Gemini 1.5 Pro (Max Quality)</option>
+                    <option class="bg-[#1c1b1b] text-white" value="gemini-1.5-flash-latest">Gemini 1.5 Flash (Ultra Fast)</option>
                 </select>
                 <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none">expand_more</span>
             </div>
@@ -527,7 +527,7 @@
                 ? `Design themed concepts based on the video context/name: "${uploadedVideoName}".`
                 : "";
 
-            const cleanModelName = selectedModel.replace(/^models\//i, '').trim();
+            let cleanModelName = selectedModel.replace(/^models\//i, '').trim();
 
             const systemInstruction = `You are a high-caliber AI Thumbnail Architect. Generate a unique, creative, high-CTR image generation prompt based on individual video options.
 Provide a JSON block representing your response EXACTLY as matched below:
@@ -586,9 +586,9 @@ Only output the JSON object directly. No markdown tags, no backticks, no comment
                     throw new Error(errMsg || `Gemini API HTTP Error Status: ${response.status}`);
                 }
             } catch (fetchErr) {
-                if ((fetchErr.message === "PRIMARY_FALLBACK" || fetchErr.message.toLowerCase().includes("not found")) && cleanModelName !== 'gemini-1.5-flash') {
-                    console.log("Primary model failed/not supported. Falling back to key-universal gemini-1.5-flash...");
-                    const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                if ((fetchErr.message === "PRIMARY_FALLBACK" || fetchErr.message.toLowerCase().includes("not found")) && cleanModelName !== 'gemini-1.5-flash-latest') {
+                    console.log("Primary model failed/not supported. Falling back to key-universal gemini-1.5-flash-latest...");
+                    const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
                     response = await fetch(fallbackEndpoint, {
                         method: 'POST',
                         headers: {
